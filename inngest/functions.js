@@ -3,8 +3,13 @@ import { inngest } from "./client";
 
 // Function to save user data to a database
 export const sysncUserCreation = inngest.createFunction(
-  { id: "sync-user-create" },
-  { event: "clerk/user.created" },
+  {
+    id: "sync-user-create",
+    triggers: {
+      event: "clerk/user.created",
+    },
+  },
+
   async ({ event }) => {
     const { data } = event;
     await prisma.user.create({
@@ -20,8 +25,8 @@ export const sysncUserCreation = inngest.createFunction(
 
 // Function to update data in database
 export const syncUserUpdation = inngest.createFunction(
-  { id: "sync-user-update" },
-  { event: "clerk/user.updated" },
+  { id: "sync-user-update", triggers: { event: "clerk/user.updated" } },
+
   async ({ event }) => {
     const { data } = event;
     await prisma.user.update({
@@ -37,8 +42,8 @@ export const syncUserUpdation = inngest.createFunction(
 
 // Function to delete user from database
 export const syncUserDeletion = inngest.createFunction(
-  { id: "sync-user-delete" },
-  { event: "clerk/user.deleted" },
+  { id: "sync-user-delete", triggers: { event: "clerk/user.deleted" } },
+
   async ({ event }) => {
     const { data } = event;
     await prisma.user.delete({
