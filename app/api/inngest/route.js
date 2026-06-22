@@ -3,10 +3,10 @@ import { inngest } from "../../../inngest/client";
 import {
   syncUserDeletion,
   syncUserUpdation,
-  sysncUserCreation,
+  syncUserCreation,
 } from "@/inngest/functions";
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
-  functions: [sysncUserCreation, syncUserUpdation, syncUserDeletion],
+  functions: [syncUserCreation, syncUserUpdation, syncUserDeletion],
 });

@@ -1,8 +1,9 @@
 // src/inngest/functions.ts
+import { prisma } from "@/lib/db";
 import { inngest } from "./client";
 
 // Function to save user data to a database
-export const sysncUserCreation = inngest.createFunction(
+export const syncUserCreation = inngest.createFunction(
   {
     id: "sync-user-create",
     triggers: {
@@ -15,7 +16,7 @@ export const sysncUserCreation = inngest.createFunction(
     await prisma.user.create({
       data: {
         id: data.id,
-        email: data.email_addresses[0].email_adress,
+        email: data.email_addresses[0].email_address,
         name: `${data.first_name} ${data.last_name}`,
         image: data.image_url,
       },
@@ -32,7 +33,7 @@ export const syncUserUpdation = inngest.createFunction(
     await prisma.user.update({
       where: { id: data.id },
       data: {
-        email: data.email_addresses[0].email_adress,
+        email: data.email_addresses[0].email_address,
         name: `${data.first_name} ${data.last_name}`,
         image: data.image_url,
       },
