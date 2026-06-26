@@ -1,0 +1,133 @@
+import imagekit from "@/configs/imageKit";
+import { prisma } from "@/lib/db";
+import { getAuth } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+
+export async function POST(request) {
+  try {
+    const { userId } = getAuth(request);
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // get form data
+    const formData = await request.formData();
+    const name = formData.get("name");
+    const username = formData.get("username");
+    const description = formData.get("description");
+    const email = formData.get("email");
+    const contact = formData.get("contact");
+    const address = formData.get("address");
+    const image = formData.get("image");
+
+    // Check missing fields
+    if (
+      !name ||
+      !username ||
+      !description ||
+      !email ||
+      !contact ||
+      !address ||
+      !image
+    ) {
+      return NextResponse.json(
+        { error: "Missing store info" },
+        { status: 400 },
+      );
+    }
+
+    // Check if user have already registered store
+    const store = await prisma.store.findFirst({
+      where: { userId: userId },
+    });
+
+    if (store) {
+      return NextResponse.json({ status: store.status });
+    }
+
+    // Check if username already exists
+    const isUsernameTaken = await prisma.store.findUnique({
+      where: { username: username.toLowerCase() },
+    });
+    if (isUsernameTaken) {
+      return NextResponse.json(
+        { error: "Username already taken" },
+        { status: 400 },
+      );
+    }
+
+    // Upload image to imagekit
+    const buffer = Buffer.from(await image.arrayBuffer());
+    const response = await imagekit.upload({
+      file: buffer,
+      fileName: image.name,
+      folder: "logos",
+    });
+
+    const optimizedImage = imagekit.url({
+      path: response.filePath,
+      transformation: [
+        { quality: "auto" },
+        { format: "webp" },
+        { width: "512" },
+      ],
+    });
+
+    const newStore = await prisma.store.create({
+      data: {
+        userId,
+        name,
+        username: username.toLowerCase(),
+        description,
+        email,
+        contact,
+        address,
+        logo: optimizedImage,
+      },
+    });
+
+    // link store to user
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { store: { connect: { id: newStore.id } } },
+    });
+
+    return NextResponse.json({ message: "Applied, waiting for approval" });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: error?.message || "Something went wrong." },
+      { status: 400 },
+    );
+  }
+}
+
+// Check if user have already registered store and if yes send status of store
+export async function GET(request) {
+  try {
+    const { userId } = getAuth(request);
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if user have already registered store
+    const store = await prisma.store.findFirst({
+      where: { userId: userId },
+    });
+
+    if (store) {
+      return NextResponse.json({ status: store.status });
+    }
+
+    return NextResponse.json({ status: "Not registered" });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: error?.message || "Something went wrong." },
+      { status: 400 },
+    );
+  }
+}
